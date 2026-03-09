@@ -25,3 +25,13 @@ class BookData:
     urls: list[str] = field(default_factory=list)
     publisher: str = ""
     year: int | str | None = None
+
+    def to_substitute_mapping(self) -> dict[str, str]:
+        return {
+            "isbn": str(self.isbn),
+            "title": self.title,
+            "authors": str(self.authors),
+            "urls": "\n".join(self.urls),
+            "publisher": self.publisher,
+            "year": f"{self.year}",
+        }
