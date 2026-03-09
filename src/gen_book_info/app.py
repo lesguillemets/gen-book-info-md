@@ -22,8 +22,12 @@ def main():
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="%(levelname)s [%(name)s] %(message)s",
+    )
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("gen_book_info").setLevel(logging.DEBUG)
 
     try:
         isbn = ISBN(args.isbn)
