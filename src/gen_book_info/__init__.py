@@ -1,2 +1,5 @@
+import gen_book_info.app as app
+
+
 def main() -> None:
-    print("Hello from gen-book-info!")
+    app.main()
