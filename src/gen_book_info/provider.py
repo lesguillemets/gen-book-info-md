@@ -13,6 +13,10 @@ class Provider(ABC):
         """
         ...
 
+    def fetch_from_string(self, isbn_str: str) -> BookData | None:
+        isbn = ISBN(isbn_str)
+        return self.fetch(isbn)
+
 
 # Copyright (c) 2026 lesguillemets
 # This Source Code Form is subject to the terms of the Mozilla Public
