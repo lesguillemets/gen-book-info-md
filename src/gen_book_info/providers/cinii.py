@@ -15,6 +15,7 @@ from gen_book_info.provider import Provider
 
 class CiNiiProvider(Provider):
     def fetch(self, isbn: ISBN) -> BookData | None:
+        logger.debug(f"Fetching {isbn} from CiNii")
         r = httpx.get(
             "https://ci.nii.ac.jp/books/opensearch/search",
             params={"format": "json", "isbn": isbn.isbn},
@@ -32,6 +33,11 @@ class CiNiiProvider(Provider):
             )
 
         the_result = resul["items"][0]
+        logger.debug(
+            f"Parsed result: title={the_result['title']!r},"
+            f" creator={the_result['dc:creator']!r},"
+            f" publisher={the_result['dc:publisher'][0]!r}"
+        )
         return BookData(
             isbn=isbn,
             title=the_result["title"],

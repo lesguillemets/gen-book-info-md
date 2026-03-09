@@ -22,20 +22,27 @@ def main():
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="%(levelname)s [%(name)s] %(message)s",
+    )
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("gen_book_info").setLevel(logging.DEBUG)
 
     try:
         isbn = ISBN(args.isbn)
     except ValueError as e:
         logger.error(e)
         sys.exit(str(e))
+    logger.debug(f"Looking up ISBN {isbn} (type {isbn.type})")
     bd = CiNiiProvider().fetch(isbn)
     if bd is not None:
+        logger.info(f"Found: {bd.title!r} ({bd.year})")
         print(export(bd))
         return bd
     else:
-        logger.debug(f"Not a result for {isbn}")
+        logger.warning(f"No result found for {isbn}")
+        sys.exit(1)
 
 
 # Copyright (c) 2026 lesguillemets
