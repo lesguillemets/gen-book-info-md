@@ -1,0 +1,25 @@
+[project]
+name = "gen-book-info"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "lesguillemets", email = "kgkacko+github@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "httpx>=0.28.1",
+]
+
+[project.scripts]
+gen-book-info = "gen_book_info:main"
+
+[build-system]
+requires = ["uv_build>=0.9.29,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.408",
+    "ruff>=0.15.5",
+]
