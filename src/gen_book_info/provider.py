@@ -5,9 +5,11 @@ from gen_book_info.bookdata import ISBN, BookData
 
 class Provider(ABC):
     @abstractmethod
-    def fetch(self, isbn: ISBN) -> BookData:
+    def fetch(self, isbn: ISBN) -> BookData | None:
         """
-        from an isbn, gets the book data
+        from an isbn, gets the book data.
+        If the provider doesn't find the corresponding data,
+        returns a None.
         """
         ...
 

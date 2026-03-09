@@ -7,7 +7,7 @@ retuned data
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from gen_book_info.isbn import ISBN
 
@@ -21,6 +21,7 @@ class BookData:
     isbn: ISBN
     title: str = ""
     title_reading: str = ""
-    authors: list[str] = []
+    authors: list[str] = field(default_factory=list)
+    urls: list[str] = field(default_factory=list)
     publisher: str = ""
-    year: int | None = None
+    year: int | str | None = None

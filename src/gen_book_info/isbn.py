@@ -28,6 +28,9 @@ class ISBN:
         else:
             raise ValueError(f"wrong length: {number}")
 
+    def __str__(self):
+        return self.isbn
+
 
 def check_digit_13(number: str) -> bool:
     """
