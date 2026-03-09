@@ -34,12 +34,15 @@ def main():
     except ValueError as e:
         logger.error(e)
         sys.exit(str(e))
+    logger.debug(f"Looking up ISBN {isbn} (type {isbn.type})")
     bd = CiNiiProvider().fetch(isbn)
     if bd is not None:
+        logger.info(f"Found: {bd.title!r} ({bd.year})")
         print(export(bd))
         return bd
     else:
-        logger.debug(f"Not a result for {isbn}")
+        logger.warning(f"No result found for {isbn}")
+        sys.exit(1)
 
 
 # Copyright (c) 2026 lesguillemets
