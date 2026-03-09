@@ -36,3 +36,9 @@ def main():
         return bd
     else:
         logger.debug(f"Not a result for {isbn}")
+
+
+# Copyright (c) 2026 lesguillemets
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
