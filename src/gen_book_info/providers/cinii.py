@@ -4,13 +4,13 @@ cinii books
 
 import logging
 
-logger = logging.getLogger(__name__)
-
 import httpx
 
 from gen_book_info.bookdata import BookData
 from gen_book_info.isbn import ISBN
 from gen_book_info.provider import Provider
+
+logger = logging.getLogger(__name__)
 
 
 class CiNiiProvider(Provider):
