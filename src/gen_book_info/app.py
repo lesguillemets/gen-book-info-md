@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 from enum import Enum
 from pathlib import Path
@@ -50,7 +51,6 @@ def main():
         help="write to this file (with --output file) or outdir (with --output dir)",
     )
     args = parser.parse_args()
-    print(args.output)
 
     logging.basicConfig(
         level=logging.WARNING,
@@ -65,13 +65,18 @@ def main():
         if args.path is None:
             raise RuntimeError("no output file is specified")
         else:
-            if args.path.isfile():
+            if args.path.is_file():
                 logger.warning(f"refraining from overriding {args.path}")
                 sys.exit(1)
     elif output_option == OutputOption.DIR:
-        if args.path is None:
-            logger.info("defaulting")
-            # pass
+        if (out_dir := args.path) is None:
+            # if not specified in the command line arugment, use environmental variable
+            out_dir = os.environ.get("GEN_BOOK_INFO_DIR")
+            if out_dir is None:
+                raise RuntimeError("output dir is unspecified")
+            else:
+                out_dir = Path(out_dir)
+                logger.info(f"directory set by environmental variable: {out_dir}")
 
     try:
         isbn = ISBN(args.isbn)
@@ -83,6 +88,20 @@ def main():
     if bd is not None:
         logger.info(f"Found: {bd.title!r} ({bd.year})")
         export_result = export(bd)
+        match output_option:
+            case OutputOption.FILE:
+                with args.path.open("w") as f:
+                    f.write(export_result)
+            case OutputOption.DIR:
+                assert isinstance(out_dir, Path)
+                out_file = out_dir / f"{isbn.isbn}.md"
+                if out_file.is_file():
+                    logger.warning(f"not overriding {out_file}")
+                    sys.exit(1)
+                with out_file.open("a") as f:
+                    f.write(export_result)
+            case OutputOption.STDOUT:
+                print(export_result)
         return bd
     else:
         logger.warning(f"No result found for {isbn}")
