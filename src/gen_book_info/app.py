@@ -5,11 +5,11 @@ import sys
 from enum import Enum
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
-
 from gen_book_info.exporter import export
 from gen_book_info.isbn import ISBN
 from gen_book_info.providers.cinii import CiNiiProvider
+
+logger = logging.getLogger(__name__)
 
 
 class OutputOption(Enum):
@@ -63,7 +63,8 @@ def main():
     if output_option == OutputOption.FILE:
         # requires file specification
         if args.path is None:
-            raise RuntimeError("no output file is specified")
+            logger.error("no output file is specified")
+            sys.exit(1)
         else:
             if args.path.is_file():
                 logger.warning(f"refraining from overriding {args.path}")
@@ -73,7 +74,8 @@ def main():
             # if not specified in the command line arugment, use environmental variable
             out_dir = os.environ.get("GEN_BOOK_INFO_DIR")
             if out_dir is None:
-                raise RuntimeError("output dir is unspecified")
+                logger.error("output dir is unspecified")
+                sys.exit(1)
             else:
                 out_dir = Path(out_dir)
                 logger.info(f"directory set by environmental variable: {out_dir}")
@@ -82,7 +84,7 @@ def main():
         isbn = ISBN(args.isbn)
     except ValueError as e:
         logger.error(e)
-        sys.exit(str(e))
+        sys.exit(1)
     logger.debug(f"Looking up ISBN {isbn} (type {isbn.type})")
     bd = CiNiiProvider().fetch(isbn)
     if bd is not None:
@@ -98,7 +100,7 @@ def main():
                 if out_file.is_file():
                     logger.warning(f"not overriding {out_file}")
                     sys.exit(1)
-                with out_file.open("a") as f:
+                with out_file.open("w") as f:
                     f.write(export_result)
             case OutputOption.STDOUT:
                 print(export_result)
