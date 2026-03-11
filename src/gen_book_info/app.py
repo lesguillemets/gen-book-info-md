@@ -88,6 +88,7 @@ def main():
             else:
                 out_dir = Path(out_dir)
                 logger.info(f"directory set by environmental variable: {out_dir}")
+        out_dir = out_dir.resolve()
 
     try:
         isbn = ISBN(args.isbn)
@@ -102,8 +103,11 @@ def main():
         match output_option:
             case OutputOption.FILE:
                 # ファイルに書き込み
-                with args.path.open("w") as f:
+                out_file = args.path.resolve()
+                with out_file.open("w") as f:
                     f.write(export_result)
+
+                logger.info(f"wrote to {out_file}")
             case OutputOption.DIR:
                 # ディレクトリ下に ISBN.md を作成
                 assert isinstance(out_dir, Path)
@@ -114,6 +118,7 @@ def main():
                     sys.exit(1)
                 with out_file.open("w") as f:
                     f.write(export_result)
+                logger.info(f"wrote to {out_file}")
             case OutputOption.STDOUT:
                 print(export_result)
         return bd
