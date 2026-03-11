@@ -13,9 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class OutputOption(Enum):
-    STDOUT = "stdout"
-    FILE = "file"
-    DIR = "dir"
+    """
+    出力先の設定
+    """
+
+    STDOUT = "stdout"  # 標準出力
+    FILE = "file"  # ファイル名を指定
+    DIR = "dir"  # あるディレクトリで，ファイル名は ISBN から決める
 
 
 def main():
@@ -52,6 +56,7 @@ def main():
     )
     args = parser.parse_args()
 
+    # log の設定 (--verbose)
     logging.basicConfig(
         level=logging.WARNING,
         format="%(levelname)s [%(name)s] %(message)s",
@@ -60,6 +65,7 @@ def main():
         logging.getLogger("gen_book_info").setLevel(logging.DEBUG)
 
     output_option = args.output
+    # 関連するオプション (file なら --path とか) の設定をチェック
     if output_option == OutputOption.FILE:
         # requires file specification
         if args.path is None:
@@ -67,13 +73,16 @@ def main():
             sys.exit(1)
         else:
             if args.path.is_file():
+                # すでにあるファイルは上書きしない
                 logger.warning(f"refraining from overriding {args.path}")
                 sys.exit(1)
     elif output_option == OutputOption.DIR:
+        # reads from environmental variable
         if (out_dir := args.path) is None:
             # if not specified in the command line arugment, use environmental variable
             out_dir = os.environ.get("GEN_BOOK_INFO_DIR")
             if out_dir is None:
+                # not specified, either by command line argument or $GEN_BOOK_INFO_DIR
                 logger.error("output dir is unspecified")
                 sys.exit(1)
             else:
@@ -92,12 +101,15 @@ def main():
         export_result = export(bd)
         match output_option:
             case OutputOption.FILE:
+                # ファイルに書き込み
                 with args.path.open("w") as f:
                     f.write(export_result)
             case OutputOption.DIR:
+                # ディレクトリ下に ISBN.md を作成
                 assert isinstance(out_dir, Path)
                 out_file = out_dir / f"{isbn.isbn}.md"
                 if out_file.is_file():
+                    # すでにあるときは触らないでおく
                     logger.warning(f"not overriding {out_file}")
                     sys.exit(1)
                 with out_file.open("w") as f:

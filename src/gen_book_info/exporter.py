@@ -6,6 +6,9 @@ from gen_book_info.bookdata import BookData
 
 
 def export(bd: BookData) -> str:
+    """
+    BookResult から所定のテンプレートを埋めた結果を返す
+    """
     template = Template(
         importlib.resources.read_text(gen_book_info.templates, "template.md")
     )

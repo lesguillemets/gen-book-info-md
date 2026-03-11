@@ -7,6 +7,10 @@ import itertools as it
 
 
 class ISBN:
+    """
+    checkdigit の済んだ ISBN
+    """
+
     isbn: str
     type: str
 

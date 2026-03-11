@@ -14,6 +14,9 @@ class Provider(ABC):
         ...
 
     def fetch_from_string(self, isbn_str: str) -> BookData | None:
+        """
+        ISBN じゃなくて文字列として受け取ってそのパーズからやる
+        """
         isbn = ISBN(isbn_str)
         return self.fetch(isbn)
 
