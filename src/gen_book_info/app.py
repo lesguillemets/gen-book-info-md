@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from gen_book_info.bookdata import BookData
 from gen_book_info.exporter import export
 from gen_book_info.isbn import ISBN
 from gen_book_info.providers.cinii import CiNiiProvider
@@ -70,11 +71,11 @@ class OutputConfig:
             case OutputOption.STDOUT:
                 return OutputConfig(option=output_option, path=None)
 
-    def handle(self, *, isbn: ISBN, result: str):
+    def handle(self, bookdata: BookData):
         """
         設定に基づいて処理する
         """
-        # todo: export もここでしたらよいのかも
+        result = export(bookdata)
         match self.option:
             case OutputOption.FILE:
                 assert isinstance(self.path, Path)
@@ -86,7 +87,7 @@ class OutputConfig:
                 if not self.path.exists():
                     logger.warning(f"Creating dir: {self.path}")
                     self.path.mkdir(parents=True)
-                out_file = self.path / f"{isbn.isbn}.md"
+                out_file = self.path / f"{bookdata.isbn.isbn}.md"
                 if out_file.is_file():
                     # すでにあるときは触らないでおく
                     logger.warning(f"not overriding {out_file}")
@@ -158,7 +159,7 @@ def main():
     if bd is not None:
         # 成功！
         logger.info(f"Found: {bd.title!r} ({bd.year})")
-        output_config.handle(isbn=isbn, result=export(bd))
+        output_config.handle(bd)
         return bd
     else:
         logger.warning(f"No result found for {isbn}")
