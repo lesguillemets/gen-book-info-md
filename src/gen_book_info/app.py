@@ -25,11 +25,18 @@ class OutputOption(Enum):
 
 @dataclass
 class OutputConfig:
+    """
+    出力先どこにどうするか
+    """
+
     option: OutputOption
     path: Path | None = None
 
     @staticmethod
     def from_args(args: argparse.Namespace) -> OutputConfig:
+        """
+        ArgumentParser から
+        """
         output_option = args.output
         match output_option:
             case OutputOption.FILE:
@@ -64,6 +71,10 @@ class OutputConfig:
                 return OutputConfig(option=output_option, path=None)
 
     def handle(self, *, isbn: ISBN, result: str):
+        """
+        設定に基づいて処理する
+        """
+        # todo: export もここでしたらよいのかも
         match self.option:
             case OutputOption.FILE:
                 assert isinstance(self.path, Path)
@@ -129,19 +140,23 @@ def main():
     if args.verbose:
         logging.getLogger("gen_book_info").setLevel(logging.DEBUG)
 
+    # 出力先設定の読み込み
     try:
         output_config = OutputConfig.from_args(args)
     except ValueError as e:
         logger.error(e)
         sys.exit(1)
+    # ISBN 読み取り
     try:
         isbn = ISBN(args.isbn)
     except ValueError as e:
         logger.error(e)
         sys.exit(1)
     logger.debug(f"Looking up ISBN {isbn} (type {isbn.type})")
+    # 書籍のデータ取得
     bd = CiNiiProvider().fetch(isbn)
     if bd is not None:
+        # 成功！
         logger.info(f"Found: {bd.title!r} ({bd.year})")
         output_config.handle(isbn=isbn, result=export(bd))
         return bd
