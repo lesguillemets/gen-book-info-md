@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import sys
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
@@ -20,6 +21,70 @@ class OutputOption(Enum):
     STDOUT = "stdout"  # 標準出力
     FILE = "file"  # ファイル名を指定
     DIR = "dir"  # あるディレクトリで，ファイル名は ISBN から決める
+
+
+@dataclass
+class OutputConfig:
+    option: OutputOption
+    path: Path | None = None
+
+    @staticmethod
+    def from_args(args: argparse.Namespace) -> OutputConfig:
+        output_option = args.output
+        match output_option:
+            case OutputOption.FILE:
+                # 関連するオプション (file なら --path とか) の設定をチェック
+                # requires file specification
+                out_path = args.path
+                if out_path is None:
+                    raise ValueError("no output file is specified")
+                else:
+                    if out_path.is_file():
+                        # すでにあるファイルは上書きしない
+                        logger.warning(f"refraining from overriding {out_path}")
+                        raise ValueError(f"refraining from overriding {out_path}")
+                return OutputConfig(option=output_option, path=out_path.resolve())
+            case OutputOption.DIR:
+                # specified, or reads from environmental variable
+                if (out_dir := args.path) is None:
+                    # if not specified in the command line arugment, use environmental variable
+                    out_dir = os.environ.get("GEN_BOOK_INFO_DIR")
+                    if out_dir is None:
+                        # not specified, either by command line argument or $GEN_BOOK_INFO_DIR
+                        raise ValueError("output dir is unspecified")
+                    else:
+                        out_dir = Path(out_dir)
+                        logger.info(
+                            f"directory set by environmental variable: {out_dir}"
+                        )
+                else:
+                    logger.info(f"directory set by  command line argument: {out_dir}")
+                return OutputConfig(option=output_option, path=out_dir.resolve())
+            case OutputOption.STDOUT:
+                return OutputConfig(option=output_option, path=None)
+
+    def handle(self, *, isbn: ISBN, result: str):
+        match self.option:
+            case OutputOption.FILE:
+                assert isinstance(self.path, Path)
+                with self.path.open("w") as f:
+                    f.write(result)
+                logger.info(f"wrote to {self.path}")
+            case OutputOption.DIR:
+                assert isinstance(self.path, Path)
+                if not self.path.exists():
+                    logger.warning(f"Creating dir: {self.path}")
+                    self.path.mkdir(parents=True)
+                out_file = self.path / f"{isbn.isbn}.md"
+                if out_file.is_file():
+                    # すでにあるときは触らないでおく
+                    logger.warning(f"not overriding {out_file}")
+                    sys.exit(1)
+                with out_file.open("w") as f:
+                    f.write(result)
+                logger.info(f"wrote to {out_file}")
+            case OutputOption.STDOUT:
+                print(result)
 
 
 def main():
@@ -64,32 +129,11 @@ def main():
     if args.verbose:
         logging.getLogger("gen_book_info").setLevel(logging.DEBUG)
 
-    output_option = args.output
-    # 関連するオプション (file なら --path とか) の設定をチェック
-    if output_option == OutputOption.FILE:
-        # requires file specification
-        if args.path is None:
-            logger.error("no output file is specified")
-            sys.exit(1)
-        else:
-            if args.path.is_file():
-                # すでにあるファイルは上書きしない
-                logger.warning(f"refraining from overriding {args.path}")
-                sys.exit(1)
-    elif output_option == OutputOption.DIR:
-        # reads from environmental variable
-        if (out_dir := args.path) is None:
-            # if not specified in the command line arugment, use environmental variable
-            out_dir = os.environ.get("GEN_BOOK_INFO_DIR")
-            if out_dir is None:
-                # not specified, either by command line argument or $GEN_BOOK_INFO_DIR
-                logger.error("output dir is unspecified")
-                sys.exit(1)
-            else:
-                out_dir = Path(out_dir)
-                logger.info(f"directory set by environmental variable: {out_dir}")
-        out_dir = out_dir.resolve()
-
+    try:
+        output_config = OutputConfig.from_args(args)
+    except ValueError as e:
+        logger.error(e)
+        sys.exit(1)
     try:
         isbn = ISBN(args.isbn)
     except ValueError as e:
@@ -99,28 +143,7 @@ def main():
     bd = CiNiiProvider().fetch(isbn)
     if bd is not None:
         logger.info(f"Found: {bd.title!r} ({bd.year})")
-        export_result = export(bd)
-        match output_option:
-            case OutputOption.FILE:
-                # ファイルに書き込み
-                out_file = args.path.resolve()
-                with out_file.open("w") as f:
-                    f.write(export_result)
-
-                logger.info(f"wrote to {out_file}")
-            case OutputOption.DIR:
-                # ディレクトリ下に ISBN.md を作成
-                assert isinstance(out_dir, Path)
-                out_file = out_dir / f"{isbn.isbn}.md"
-                if out_file.is_file():
-                    # すでにあるときは触らないでおく
-                    logger.warning(f"not overriding {out_file}")
-                    sys.exit(1)
-                with out_file.open("w") as f:
-                    f.write(export_result)
-                logger.info(f"wrote to {out_file}")
-            case OutputOption.STDOUT:
-                print(export_result)
+        output_config.handle(isbn=isbn, result=export(bd))
         return bd
     else:
         logger.warning(f"No result found for {isbn}")
