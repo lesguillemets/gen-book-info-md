@@ -5,6 +5,8 @@ authors: ${authors}
 publisher: ${publisher}
 ---
 
+${title}
+
 ISBN ${isbn}. ${publisher}, ${year}.
 
 ${urls} .
