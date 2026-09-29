@@ -9,7 +9,9 @@ from pathlib import Path
 from gen_book_info.bookdata import BookData
 from gen_book_info.exporter import export
 from gen_book_info.isbn import ISBN
+from gen_book_info.provider import Provider
 from gen_book_info.providers.cinii import CiNiiProvider
+from gen_book_info.providers.google_books import API_KEY_ENV, GoogleBooksProvider
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,22 @@ class OutputOption(Enum):
     STDOUT = "stdout"  # 標準出力
     FILE = "file"  # ファイル名を指定
     DIR = "dir"  # あるディレクトリで，ファイル名は ISBN から決める
+
+
+class ProviderOption(Enum):
+    """
+    書誌データの取得元
+    """
+
+    CINII = "cinii"  # CiNii Books
+    GOOGLE = "google"  # Google Books
+
+    def provider(self) -> Provider:
+        match self:
+            case ProviderOption.CINII:
+                return CiNiiProvider()
+            case ProviderOption.GOOGLE:
+                return GoogleBooksProvider()
 
 
 @dataclass
@@ -126,6 +144,20 @@ def main():
         ),
     )
     parser.add_argument(
+        "--provider",
+        "-p",
+        type=ProviderOption,
+        choices=ProviderOption,
+        default=ProviderOption.CINII,
+        metavar=f"{{{','.join(po.value for po in ProviderOption)}}}",
+        help=(
+            "where to fetch the data from:\n"
+            "'cinii': CiNii Books (default)\n"
+            "'google': Google Books"
+            f" (API key optionally read from ${API_KEY_ENV})"
+        ),
+    )
+    parser.add_argument(
         "--path",
         type=Path,
         default=None,
@@ -155,7 +187,7 @@ def main():
         sys.exit(1)
     logger.debug(f"Looking up ISBN {isbn} (type {isbn.type})")
     # 書籍のデータ取得
-    bd = CiNiiProvider().fetch(isbn)
+    bd = args.provider.provider().fetch(isbn)
     if bd is not None:
         # 成功！
         logger.info(f"Found: {bd.title!r} ({bd.year})")

@@ -4,7 +4,7 @@ Fetches the data about a book specified by ISBN, and writes/prints in markdown f
 
 ```
 usage: gen-book-info [-h] [--verbose] [--output {stdout,file,dir}]
-                     [--path PATH]
+                     [--provider {cinii,google}] [--path PATH]
                      isbn
 
 fetch book info from ISBN and fills the template
@@ -21,6 +21,10 @@ options:
                         writes to file (requires --path) 'dir': writes to a
                         file named with isbn under dir (--path or as specified
                         by $GEN_BOOK_INFO_DIR)
+  --provider, -p {cinii,google}
+                        where to fetch the data from: 'cinii': CiNii Books
+                        (default) 'google': Google Books (API key optionally
+                        read from $GEN_BOOK_INFO_GOOGLE_API_KEY)
   --path PATH           write to this file (with --output file) or outdir
                         (with --output dir)
 ```
@@ -30,6 +34,9 @@ Examples:
 - `gen-book-info isbn` -- writes to stdout. ISBN can be either 10 or 13 digits, and hyphen can be included or omitted.
 - `gen-book-info isbn --output file --path /path/to/file.md` -- writes to `/path/to/file.md`
 - `gen-book-info isbn --output dir --path /path/to/dir/` -- writes to `/path/to/dir/{isbn}.md`
+- `gen-book-info isbn --provider google` -- fetches from Google Books instead of CiNii Books.
+  Requests without an API key are subject to a small, shared quota and often fail with HTTP 429;
+  set `$GEN_BOOK_INFO_GOOGLE_API_KEY` to a Google Cloud API key with the Books API enabled.
 
 
 If the files this script is about to write exists, it simply exits and refuses to overwrite the file.
